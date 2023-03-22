@@ -5,5 +5,4 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    print("HazyTDP Testing Testing")
-    return"HazyTDP Testing Testing"
+    return render_template("home.html.jinja")

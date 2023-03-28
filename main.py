@@ -24,11 +24,11 @@ connection = pymysql.connect(
 def post_feed():
     cursor = connection.cursor("")
 
-    cursor.execute("SELECT * FROM `posts` ORDER BY `Date`")
+    cursor.execute("SELECT * FROM `posts` JOIN `Users` ON `posts`.`user_id`= `Users`.`id` ORDER BY `Date` DESC;")
 
     results = cursor.fetchall()
 
-    return render_template("posts.html.jinja",post=results )
+    return render_template("posts.html.jinja",posts=results )
 
 
 if __name__ == '__main__':

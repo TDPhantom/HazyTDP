@@ -1,12 +1,14 @@
 from flask import Flask , render_template, request, redirect
 import pymysql
 import pymysql.cursors
-from flask_login import LoginManager
+from flask_login import LoginManager, login_required, login_user, current_user, logout_user
 
-login_manager = LoginManager
+login_manager = LoginManager()
 
 app = Flask(__name__)
 login_manager.init_app(app)
+
+app.config['SECRET_KEY'] = 'something_random'
 
 @app.route("/")
 def index():
@@ -18,7 +20,7 @@ class User:
         self.is_anonymous = False
         self. is_active = not banned
 
-        self.user = Username
+        self.username = Username
         self.id = id
 
     def get_id(self):
@@ -46,9 +48,10 @@ def user_loader(user_id):
     if result is None:
         return None
     
-    return User(result['id'], result['Username'], result['banned'])
+    return User(result['id'], result['username'], result['banned'])
 
-@app.route('/post')
+@app.route('/feed')
+@login_required
 def post_feed():
     cursor = connection.cursor("")
 
@@ -58,9 +61,49 @@ def post_feed():
 
     return render_template("posts.html.jinja",posts=results )
 
-@app.route('/sign-in')
+
+@app.route('/sign-out')
+def sign_out():
+    logout_user()
+
+    return redirect('/sign-in')
+
+@app.route('/sign-in', methods=['POST', 'GET'])
 def sign_in():
-    return render_template("sign_in.html.jinja")
+    if current_user.is_authenticated:
+        return redirect('/feed')
+
+
+    if request.method == "POST":
+        cursor = connection.cursor()
+
+        cursor.execute(f"SELECT * FROM `Users` WHERE `Username` =  '{request.form['Username']}' ")
+
+        result = cursor.fetchone()
+
+
+
+        if result is None:
+            return render_template("sign_in.html.jinja")
+        
+        if request.form['Password'] == result['password']:
+            user=User(result['id'],result['username'],result['banned'])
+
+            login_user(user)
+
+            return redirect('/feed')
+
+        else:
+            return render_template('sign_in.html.jinja')
+        
+
+
+
+
+        return request.form
+
+    elif request.method == "GET":
+        return render_template("sign_in.html.jinja")
 
 @app.route('/sign-up', methods=['POST', 'GET'])
 def sign_up():
@@ -84,7 +127,7 @@ def sign_up():
        
        
         cursor.execute("""
-            INSERT INTO `Users` (`username`, `display_name`,`email`,`Birthday`,`password`,`bio`,`photo`)
+            INSERT INTO `Users` (`Username`, `display_name`,`email`,`Birthday`,`password`,`bio`,`photo`)
             VALUES(%s,%s,%s,%s,%s,%s,%s)
         """,(request.form['Username'], request.form['Display Name'], request.form['Email'], request.form['Birthday'], request.form['Password'], request.form['Biography'], file_name))
 
@@ -103,6 +146,35 @@ def sign_up():
 
 
     return render_template("sign_up.html.jinja")
+
+
+@app.route('/post', methods=['POST'])
+@login_required
+def create_post():
+    cursor = connection.cursor()
+
+    user_id = current_user.id
+
+    if request.method =='POST':
+        #Handle signup
+        cursor = connection.cursor()
+
+        Profile =request.files['feed']
+       
+        file_name = Profile.filename # my_jgp
+        
+        file_extension = file_name.split('.')[-1]
+
+        if file_extension in ['jpg','jpeg', 'png', 'gif']:
+            Profile.save('media/posts/' + file_name)
+
+        else:
+            raise Exception('Invalid file type')
+
+    cursor.execute 
+    """("INSERT INTO `posts` (`user_id`,`post_image`, `post_text`")VALUES(%s,%s,%s)""",(request.form['user_id'], request.form['post_image'], request.form['post_text'])
+    
+    return redirect('/post')
 
 
 

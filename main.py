@@ -1,4 +1,4 @@
-from flask import Flask , render_template, request, redirect
+from flask import Flask , render_template, request, redirect,send_from_directory
 import pymysql
 import pymysql.cursors
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
@@ -132,6 +132,9 @@ def sign_up():
         """,(request.form['Username'], request.form['Display Name'], request.form['Email'], request.form['Birthday'], request.form['Password'], request.form['Biography'], file_name))
 
 
+    
+
+
         return redirect('/posts')
     elif request.method =='GET':
         return render_template('sign_up.html.jinja')
@@ -147,34 +150,36 @@ def sign_up():
 
     return render_template("sign_up.html.jinja")
 
+@app.get('/media/<path:path>')
+def send_media(path):
+    return send_from_directory('media',path)
 
 @app.route('/post', methods=['POST'])
 @login_required
 def create_post():
-    cursor = connection.cursor()
 
     user_id = current_user.id
 
-    if request.method =='POST':
-        #Handle signup
-        cursor = connection.cursor()
+    cursor = connection.cursor()
 
-        Profile =request.files['feed']
-       
-        file_name = Profile.filename # my_jgp
-        
-        file_extension = file_name.split('.')[-1]
-
-        if file_extension in ['jpg','jpeg', 'png', 'gif']:
-            Profile.save('media/posts/' + file_name)
-
-        else:
-            raise Exception('Invalid file type')
-
-    cursor.execute 
-    """("INSERT INTO `posts` (`user_id`,`post_image`, `post_text`")VALUES(%s,%s,%s)""",(request.form['user_id'], request.form['post_image'], request.form['post_text'])
+    Profile =request.files['File']
     
-    return redirect('/post')
+    file_name = Profile.filename # my_jgp
+    
+    file_extension = file_name.split('.')[-1]
+
+    if file_extension in ['jpg','jpeg', 'png', 'gif']:
+        Profile.save('media/posts/' + file_name)
+
+    else:
+        raise Exception('Invalid file type')
+
+    cursor.execute(
+        """INSERT INTO `posts` (`user_id`,`post_image`, `post_text`) VALUES (%s,%s,%s)""",
+        (user_id, file_name, request.form['Post'])
+    )
+    
+    return redirect('/feed')
 
 
 

@@ -181,6 +181,17 @@ def create_post():
     
     return redirect('/feed')
 
+@app.route('/profile/<username>')
+def user_profile(username):
+    cursor=connection.cursor()
+
+    cursor.execute("SELECT * FROM `users` WHERE `Username` = %s",(username))
+
+    result = cursor.fetchone("user_profile.html.jinja", user=result)
+
+
+    return render_template("user_profile.html.jinja")
+
 
 
 if __name__ == '__main__':

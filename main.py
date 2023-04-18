@@ -1,4 +1,4 @@
-from flask import Flask , render_template, request, redirect,send_from_directory
+from flask import Flask , render_template, request, redirect,send_from_directory,abort
 import pymysql
 import pymysql.cursors
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
@@ -185,12 +185,27 @@ def create_post():
 def user_profile(username):
     cursor=connection.cursor()
 
-    cursor.execute("SELECT * FROM `users` WHERE `Username` = %s",(username))
+    cursor.execute("SELECT * FROM `Users` WHERE `Username` = %s",(username))
 
-    result = cursor.fetchone("user_profile.html.jinja", user=result)
+    result = cursor.fetchone()
+
+    if result is None:
+        abort(404)
+
+    cursor.close()
+       
+    cursor = connection.cursor()
+        
+    cursor.execute("SELCT * FROM `post` WHERE `user_id` = %s",(result['id']))
+    
+    post_result = cursor.fetchall()
 
 
-    return render_template("user_profile.html.jinja")
+    return render_template("user_profile.html.jinja",user=result)
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('error_status.html.jinja'),404
 
 
 

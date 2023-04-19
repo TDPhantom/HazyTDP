@@ -196,7 +196,7 @@ def user_profile(username):
        
     cursor = connection.cursor()
         
-    cursor.execute("SELCT * FROM `post` WHERE `user_id` = %s",(result['id']))
+    cursor.execute("SELECT * FROM `posts` WHERE `user_id` = %s",(result['id']))
     
     post_result = cursor.fetchall()
 

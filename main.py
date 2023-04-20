@@ -118,7 +118,7 @@ def sign_up():
         file_extension = file_name.split('.')[-1]
 
         if file_extension in ['jpg','jpeg', 'png', 'gif']:
-            Profile.save('media/users' + file_name)
+            Profile.save('media/users/' + file_name)
 
         else:
             raise Exception('Invalid file type')

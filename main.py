@@ -135,7 +135,7 @@ def sign_up():
     
 
 
-        return redirect('/posts')
+        return redirect('/sign-in')
     elif request.method =='GET':
         return render_template('sign_up.html.jinja')
         

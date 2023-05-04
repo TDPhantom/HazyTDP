@@ -1,4 +1,4 @@
-from flask import Flask , render_template, request, redirect,send_from_directory,abort
+from flask import Flask , render_template, request, redirect,send_from_directory,abort,g
 import pymysql
 import pymysql.cursors
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
@@ -28,8 +28,8 @@ class User:
     
 
     
-
-connection = pymysql.connect(
+def connect_db():
+    return pymysql.connect(
     host="10.100.33.60",
     user="abattlessmith",
     password="223185349",
@@ -37,9 +37,21 @@ connection = pymysql.connect(
     cursorclass=pymysql.cursors.DictCursor,
     autocommit=True,
     )
+def get_db():
+    '''Opens a new database get_db() per request.'''        
+    if not hasattr(g, 'db'):
+        g.db = connect_db()
+    return g.db    
+
+@app.teardown_appcontext
+def close_db(error):
+    '''Closes the database get_db() at the end of request.'''    
+    if hasattr(g, 'db'):
+        g.db.close() 
+
 @login_manager.user_loader
 def user_loader(user_id):
-    cursor = connection.cursor()
+    cursor = get_db().cursor()
 
     cursor.execute("SELECT * from `Users` WHERE `id` = " + user_id)
 
@@ -53,7 +65,7 @@ def user_loader(user_id):
 @app.route('/feed')
 @login_required
 def post_feed():
-    cursor = connection.cursor("")
+    cursor = get_db().cursor("")
 
     cursor.execute("SELECT * FROM `posts` JOIN `Users` ON `posts`.`user_id`= `Users`.`id` ORDER BY `Date` DESC;")
 
@@ -75,7 +87,7 @@ def sign_in():
 
 
     if request.method == "POST":
-        cursor = connection.cursor()
+        cursor = get_db().cursor()
 
         cursor.execute(f"SELECT * FROM `Users` WHERE `Username` =  '{request.form['Username']}' ")
 
@@ -109,7 +121,7 @@ def sign_in():
 def sign_up():
     if request.method =='POST':
         #Handle signup
-        cursor = connection.cursor()
+        cursor = get_db().cursor()
 
         Profile =request.files['Profile']
        
@@ -160,7 +172,7 @@ def create_post():
 
     user_id = current_user.id
 
-    cursor = connection.cursor()
+    cursor = get_db().cursor()
 
     Profile =request.files['File']
     
@@ -183,7 +195,7 @@ def create_post():
 
 @app.route('/profile/<username>')
 def user_profile(username):
-    cursor=connection.cursor()
+    cursor=get_db().cursor()
 
     cursor.execute("SELECT * FROM `Users` WHERE `Username` = %s",(username))
 
@@ -194,7 +206,7 @@ def user_profile(username):
 
     cursor.close()
        
-    cursor = connection.cursor()
+    cursor = get_db().cursor()
         
     cursor.execute("SELECT * FROM `posts` WHERE `user_id` = %s",(result['id']))
     
